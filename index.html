@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Steve College</title>
+    <style>
+        body { font-family: Arial; margin:0; background-color: lightblue; }
+        header { position: relative; text-align: center; color: white; }
+        header img { width: 100%; height: 150px; object-fit: cover; opacity: 0.9; }
+        header h1 { position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); margin:0; font-size:2em; }
+        nav { margin:10px 0; text-align:center; }
+        nav a { margin: 0 10px; text-decoration:none; color:white; font-weight:bold; cursor:pointer; }
+        .hidden { display: none; }
+        .container { padding: 20px; }
+        input, button { margin:5px; padding:5px; width: 90%; max-width:300px; }
+        ul { list-style:none; padding-left:0; }
+        li { margin:5px 0; cursor:pointer; color:#00509e; font-weight:bold; }
+        table { border-collapse: collapse; width:100%; margin-top:10px; }
+        table, th, td { border:1px solid black; }
+        th, td { padding:8px; text-align:left; }
+    </style>
+</head>
+<body>
+<header>
+    <img src="college_banner.png" alt="Steve College Banner">
+    <h1>Steve College</h1>
+    <nav>
+        <a id="homeLink">Home</a>
+        <a id="signInLink">Student Sign In</a>
+        <a id="signUpLink">Student Sign Up</a>
+        <a id="adminLink">Admin Login</a>
+    </nav>
+</header>
+
+<div class="container">
+    <div id="home" class="section">
+        <h2>Welcome to Steve College</h2>
+        <p>Select an option from the menu above.</p>
+    </div>
+
+    <div id="signUp" class="section hidden">
+        <h2>Student Sign Up</h2>
+        <input type="text" id="suName" placeholder="Full Name"><br>
+        <input type="password" id="suPass" placeholder="Password"><br>
+        <input type="checkbox" id="suShow"> Show Password<br>
+        <input type="text" id="suCourses" placeholder="Courses (comma separated)"><br>
+        <button id="suBtn">Sign Up</button>
+        <p id="suMsg"></p>
+    </div>
+
+    <div id="signIn" class="section hidden">
+        <h2>Student Sign In</h2>
+        <input type="text" id="siName" placeholder="Full Name"><br>
+        <input type="password" id="siPass" placeholder="Password"><br>
+        <input type="checkbox" id="siShow"> Show Password<br>
+        <button id="siBtn">Sign In</button>
+        <p id="siMsg"></p>
+    </div>
+
+    <div id="studentDash" class="section hidden">
+        <h2>Student Dashboard</h2>
+        <p>Welcome, <span id="stuName"></span>!</p>
+        <ul>
+            <li id="booksLink">Books Available</li>
+            <li id="reposLink">Repositories (Past Papers)</li>
+            <li id="stuLogout">Logout</li>
+        </ul>
+        <div id="books" class="hidden">
+            <h3>Book Categories</h3>
+            <ul id="bookCats">
+                <li data-cat="Sciences">Sciences</li>
+                <li data-cat="Geography">Geography</li>
+            </ul>
+            <div id="bookList"></div>
+            <button onclick="books.classList.add('hidden')">Back</button>
+        </div>
+        <div id="repos" class="hidden">
+            <h3>Past Papers</h3>
+            <ul>
+                <li>INS 322 Past Paper 2023</li>
+                <li>ACMP 324 Past Paper 2022</li>
+                <li>INS 222 Past Paper 2021</li>
+            </ul>
+            <button onclick="repos.classList.add('hidden')">Back</button>
+        </div>
+    </div>
+
+    <div id="admin" class="section hidden">
+        <h2>Admin Login</h2>
+        <input type="text" id="adminUser" placeholder="Username"><br>
+        <input type="password" id="adminPass" placeholder="Password"><br>
+        <input type="checkbox" id="adminShow"> Show Password<br>
+        <button id="adminBtn">Login</button>
+        <p id="adminMsg"></p>
+    </div>
+
+    <div id="adminDash" class="section hidden">
+        <h2>Admin Dashboard</h2>
+        <p>Welcome Admin Steve!</p>
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Courses</th><th>Login</th><th>Logout</th><th>Duration(s)</th></tr>
+            </thead>
+            <tbody id="adminLogs"></tbody>
+        </table>
+        <button id="adminLogout">Logout</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{ // ensure DOM loaded
+    const home=document.getElementById('home'),
+          signUp=document.getElementById('signUp'),
+          signIn=document.getElementById('signIn'),
+          studentDash=document.getElementById('studentDash'),
+          books=document.getElementById('books'),
+          repos=document.getElementById('repos'),
+          admin=document.getElementById('admin'),
+          adminDash=document.getElementById('adminDash');
+
+    function hideAll(){ [home,signUp,signIn,studentDash,books,repos,admin,adminDash].forEach(s=>s.classList.add('hidden')); }
+
+    document.getElementById('homeLink').onclick=()=>{ hideAll(); home.classList.remove('hidden'); }
+    document.getElementById('signUpLink').onclick=()=>{ hideAll(); signUp.classList.remove('hidden'); }
+    document.getElementById('signInLink').onclick=()=>{ hideAll(); signIn.classList.remove('hidden'); }
+    document.getElementById('adminLink').onclick=()=>{ hideAll(); admin.classList.remove('hidden'); }
+
+    // Show/hide password
+    document.getElementById('suShow').onchange=()=>{ suPass.type = suPass.type==='password'?'text':'password'; }
+    document.getElementById('siShow').onchange=()=>{ siPass.type = siPass.type==='password'?'text':'password'; }
+    document.getElementById('adminShow').onchange=()=>{ adminPass.type = adminPass.type==='password'?'text':'password'; }
+
+    // Data
+    let students=[], logs=[], currentStudent=null, loginTime=null;
+    const bookData={"Sciences":["Mathematics","Chemistry","Physics"],"Geography":["History","WWW","ZZZZ","HUY"]};
+
+    // Sign Up
+    suBtn.onclick=()=>{
+        const name=suName.value.trim(), pass=suPass.value.trim(), courses=suCourses.value.split(',').map(c=>c.trim());
+        if(!name||!pass||courses.length===0){ suMsg.innerText="All fields required!"; return; }
+        if(students.find(s=>s.name.toLowerCase()===name.toLowerCase())){ suMsg.innerText="Student exists!"; return; }
+        students.push({name,password:pass,courses}); suMsg.innerText="Sign Up Success!"; hideAll(); signIn.classList.remove('hidden');
+    }
+
+    // Sign In
+    siBtn.onclick=()=>{
+        const name=siName.value.trim(), pass=siPass.value.trim();
+        const stu=students.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.password===pass);
+        if(stu){ currentStudent=stu; loginTime=new Date(); stuName.innerText=stu.name; hideAll(); studentDash.classList.remove('hidden'); }
+        else{ siMsg.innerText="Invalid credentials!"; }
+    }
+
+    // Student dashboard links
+    booksLink.onclick=()=>{ books.classList.remove('hidden'); bookList.innerHTML=''; }
+    reposLink.onclick=()=>{ repos.classList.remove('hidden'); }
+    stuLogout.onclick=()=>{
+        if(currentStudent&&loginTime){
+            let logoutTime=new Date();
+            logs.push({name:currentStudent.name,courses:currentStudent.courses.join(', '),login:loginTime.toLocaleTimeString(),logout:logoutTime.toLocaleTimeString(),duration:Math.floor((logoutTime-loginTime)/1000)});
+        }
+        currentStudent=null; loginTime=null; hideAll(); signIn.classList.remove('hidden');
+    }
+
+    // Book categories
+    document.querySelectorAll('#bookCats li').forEach(li=>{
+        li.onclick=()=>{ 
+            const cat=li.dataset.cat; 
+            bookList.innerHTML=`<h4>${cat} Books:</h4><ul>${bookData[cat].map(b=>`<li>${b}</li>`).join('')}</ul>`; 
+        }
+    });
+
+    // Admin login
+    adminBtn.onclick=()=>{
+        if(adminUser.value==="Steve" && adminPass.value==="1234"){
+            hideAll(); adminDash.classList.remove('hidden');
+            adminLogs.innerHTML='';
+            logs.forEach(log=>{adminLogs.innerHTML+=`<tr><td>${log.name}</td><td>${log.courses}</td><td>${log.login}</td><td>${log.logout}</td><td>${log.duration}</td></tr>`});
+        } else adminMsg.innerText="Invalid admin!";
+    }
+    adminLogout.onclick=()=>{ hideAll(); admin.classList.remove('hidden'); }
+
+    hideAll(); home.classList.remove('hidden'); // start page
+});
+</script>
+</body>
+</html>
